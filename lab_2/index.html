@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Пошук у ширину і в глибину — лабораторна робота №2</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>Сліпий пошук на графах — пошук у глибину (DFS) і в ширину (BFS)</h1>
+    <span class="sub">Лабораторна робота №2 · Системи штучного інтелекту</span>
+    <span class="spacer"></span>
+    <span class="badge" id="graphInfo">граф: —</span>
+  </header>
+
+  <!-- ============================ керування ============================= -->
+  <aside>
+
+    <div class="group">
+      <h2>Граф</h2>
+      <label class="field">
+        <span>Вид графа</span>
+        <select id="graphType">
+          <option value="undirected">Звичайний граф (32 вершини, 47 ребер)</option>
+          <option value="directed">Оргграф (32 вершини, 47 дуг)</option>
+          <option value="tree">Дерево (32 вершини, 31 ребро)</option>
+          <option value="tree-directed">Орієнтоване дерево</option>
+          <option value="mixed">Мішаний (10 ребер замінено дугами)</option>
+          <option value="extended">Розширений граф (32 вершини, 55 ребер)</option>
+        </select>
+      </label>
+      <div class="row">
+        <button id="btnReload" class="ghost">Відновити граф</button>
+        <button id="btnExport" class="ghost">Зберегти JSON</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnImport" class="ghost">Завантажити JSON</button>
+        <button id="btnPng" class="ghost">Зберегти PNG</button>
+      </div>
+      <input type="file" id="fileInput" accept="application/json" style="display:none">
+    </div>
+
+    <div class="group">
+      <h2>Алгоритм пошуку</h2>
+      <label class="field">
+        <span>Алгоритм</span>
+        <select id="algoSel">
+          <option value="dfs">Пошук у глибину (DFS) — перший шлях</option>
+          <option value="dfs-short">Пошук у глибину (DFS) — найкоротший шлях</option>
+          <option value="bfs">Пошук у ширину (BFS)</option>
+        </select>
+      </label>
+      <label class="field" id="limitField">
+        <span>Обмеження глибини для DFS (0 — без обмеження)</span>
+        <input type="number" id="limitInp" min="0" max="40" value="0">
+      </label>
+      <div class="hint" id="algoHint"></div>
+    </div>
+
+    <div class="group">
+      <h2>Параметри пошуку</h2>
+      <label class="field">
+        <span>Початкова вершина</span>
+        <select id="startSel"></select>
+      </label>
+      <label class="field">
+        <span>Цільова вершина</span>
+        <select id="goalSel"></select>
+      </label>
+      <label class="field">
+        <span>Порядок обходу суміжних вершин</span>
+        <select id="orderSel">
+          <option value="asc">За зростанням номера (1→32)</option>
+          <option value="desc">За спаданням номера (32→1)</option>
+          <option value="cw">За годинниковою стрілкою</option>
+          <option value="ccw">Проти годинникової стрілки</option>
+          <option value="insert">У порядку задання ребер</option>
+        </select>
+      </label>
+      <div class="row">
+        <button id="btnSwap" class="ghost">⇄ Поміняти місцями</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Виконання пошуку</h2>
+      <div class="row">
+        <button id="btnRun" class="primary">▶ Пуск (анімація)</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnPause">⏸ Пауза</button>
+        <button id="btnStep">⏭ Крок</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnFast">⚡ Швидкий пошук</button>
+        <button id="btnReset" class="ghost">✕ Скинути</button>
+      </div>
+      <label class="field" style="margin-top:8px">
+        <span>Швидкість анімації: <b id="speedVal">18</b> кроків/с</span>
+        <input type="range" id="speed" min="1" max="60" value="18">
+      </label>
+    </div>
+
+    <div class="group">
+      <h2>Редагування графа</h2>
+      <div class="modes">
+        <button data-mode="move"   class="on">✋ Переміщення</button>
+        <button data-mode="start">🟢 Задати старт</button>
+        <button data-mode="goal">🔴 Задати мету</button>
+        <button data-mode="addV">＋ Вершина</button>
+        <button data-mode="delV">－ Вершина</button>
+        <button data-mode="addE">＋ Ребро</button>
+        <button data-mode="addA">＋ Дуга</button>
+        <button data-mode="delE">－ Ребро/дуга</button>
+        <button data-mode="flipE" style="grid-column:1/-1">⟲ Ребро ⇄ дуга (змінити напрям)</button>
+      </div>
+      <div class="hint" id="modeHint">
+        Режим «Переміщення»: перетягуйте вершини мишею, щоб змінити вигляд графа.
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Дослідження</h2>
+      <div class="row">
+        <button id="btnCompare" class="primary">⚖ Порівняти BFS і DFS</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnResearch">📊 Серія експериментів</button>
+      </div>
+      <div class="hint">
+        «Порівняти» виконує BFS і обидва варіанти DFS на поточному графі за
+        однакових умов і показує обидва шляхи на графі. «Серія експериментів»
+        автоматично проганяє всі досліди для трьох алгоритмів і зводить
+        результати в таблиці (їх можна зберегти у CSV).
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ============================== полотно ============================== -->
+  <main id="stage">
+    <canvas id="canvas"></canvas>
+
+    <div class="legend">
+      <span><i style="background:#4da3ff"></i>у списку OPEN (черга / стек)</span>
+      <span><i style="background:#8593a8"></i>розкрита (CLOSED)</span>
+      <span><i style="background:#7c5cff"></i>поточна</span>
+      <span><i style="background:#34d399"></i>початкова</span>
+      <span><i style="background:#f87171"></i>цільова</span>
+      <span><i style="background:#ffb02e"></i>знайдений шлях</span>
+      <span><i style="background:#c084fc;border-radius:2px"></i>поточна гілка DFS</span>
+      <span><i style="background:#22d3ee;border-radius:2px"></i>шлях DFS (порівняння)</span>
+    </div>
+
+    <!-- вікно результатів пошуку -->
+    <div class="window" id="winResults">
+      <div class="title">
+        <span>Результати пошуку</span>
+        <span class="spacer"></span>
+        <button data-collapse>—</button>
+      </div>
+      <div class="body">
+        <table class="kv" id="resTable"></table>
+        <div id="queueView" class="queue-view"></div>
+        <div class="pathline" id="pathLine">Пошук не виконувався.</div>
+      </div>
+    </div>
+
+    <!-- вікно протоколу роботи алгоритму -->
+    <div class="window" id="winLog">
+      <div class="title">
+        <span>Протокол роботи алгоритму</span>
+        <span class="spacer"></span>
+        <button data-collapse>—</button>
+      </div>
+      <div class="body"><div id="logBody"></div></div>
+    </div>
+
+    <!-- вікно порівняння BFS і DFS -->
+    <div class="window" id="winCompare">
+      <div class="title">
+        <span>Порівняння пошуку в ширину і в глибину</span>
+        <span class="spacer"></span>
+        <button data-close>✕</button>
+      </div>
+      <div class="body"><div id="compareBody"></div></div>
+    </div>
+
+    <!-- вікно серії експериментів -->
+    <div class="window" id="winResearch">
+      <div class="title">
+        <span>Серія експериментів</span>
+        <span class="spacer"></span>
+        <button id="btnCsv">CSV</button>
+        <button data-close>✕</button>
+      </div>
+      <div class="body"><div id="researchBody"></div></div>
+    </div>
+  </main>
+
+</div>
+
+<script src="js/graph-data.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/bfs.js"></script>
+<script src="js/dfs.js"></script>
+<script src="js/search.js"></script>
+<script src="js/render.js"></script>
+<script src="js/research.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

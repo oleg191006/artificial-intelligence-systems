@@ -1,0 +1,294 @@
+/* ===========================================================================
+   style.css — оформлення графічного інтерфейсу програми "Пошук у ширину і в глибину"
+   =========================================================================== */
+
+:root {
+  --bg:        #10151f;
+  --panel:     #182130;
+  --panel-2:   #1f2a3c;
+  --line:      #2c3a52;
+  --text:      #e6edf7;
+  --muted:     #93a4bf;
+  --accent:    #4da3ff;
+  --accent-2:  #7c5cff;
+  --ok:        #34d399;
+  --warn:      #fbbf24;
+  --err:       #f87171;
+  --path:      #ffb02e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 "Segoe UI", Tahoma, sans-serif;
+}
+
+/* ------------------------------ каркас ---------------------------------- */
+
+#app {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+}
+
+header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, #16203040, #1c2a4040);
+  border-bottom: 1px solid var(--line);
+}
+header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+header .sub { color: var(--muted); font-size: 12.5px; }
+header .spacer { flex: 1; }
+header .badge {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 3px 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ----------------------------- бічна панель ------------------------------ */
+
+aside {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 12px 14px 40px;
+}
+
+.group { margin-bottom: 18px; }
+.group > h2 {
+  font-size: 11px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+}
+
+label.field { display: block; margin-bottom: 8px; }
+label.field span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+select, input[type="number"], input[type="text"] {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+select:focus, input:focus { outline: 1px solid var(--accent); }
+
+input[type="range"] { width: 100%; }
+
+button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+button:hover { background: #26344b; border-color: #3d5a80; }
+button:active { transform: translateY(1px); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #06182e; font-weight: 600; }
+button.primary:hover { background: #6fb4ff; }
+button.ghost { background: transparent; }
+button.danger { border-color: #5b2b2b; color: #ffb4b4; }
+button.on { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+
+.row { display: flex; gap: 6px; flex-wrap: wrap; }
+.row > * { flex: 1; }
+
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.modes button { font-size: 12.5px; padding: 6px 4px; }
+
+.hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  background: #121a27;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  margin-top: 8px;
+}
+
+/* ------------------------------- полотно --------------------------------- */
+
+main { position: relative; overflow: hidden; }
+#canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+.legend {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: #0e1622cc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  backdrop-filter: blur(3px);
+}
+.legend i {
+  display: inline-block;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+/* --------------------------- плаваючі вікна ------------------------------ */
+
+.window {
+  position: absolute;
+  width: 340px;
+  background: #131c2ae8;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 34px #0009;
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  z-index: 5;
+}
+.window .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: #1b2537;
+  border-bottom: 1px solid var(--line);
+  cursor: move;
+  font-size: 12.5px;
+  font-weight: 600;
+  user-select: none;
+}
+.window .title .spacer { flex: 1; }
+.window .title button {
+  padding: 1px 7px;
+  font-size: 12px;
+  line-height: 1.3;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+.window .body { padding: 10px 12px; max-height: 44vh; overflow: auto; }
+.window.collapsed .body { display: none; }
+
+#winResults { right: 16px; top: 16px; width: 360px; }
+#winLog { right: 16px; top: 452px; width: 400px; }
+#winResearch { left: 50%; top: 8vh; width: 780px; transform: translateX(-50%); display: none; }
+
+table.kv { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.kv td { padding: 3px 0; vertical-align: top; }
+table.kv td:first-child { color: var(--muted); width: 55%; }
+table.kv td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pathline {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #0f1826;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--path);
+  border-radius: 6px;
+  font-size: 13px;
+  word-break: break-word;
+  line-height: 1.7;
+}
+.pathline.fail { border-left-color: var(--err); color: #ffc9c9; }
+
+#logBody { font: 12px/1.5 Consolas, "Courier New", monospace; white-space: pre-wrap; }
+#logBody .l-cycle { color: var(--accent); }
+#logBody .l-open  { color: var(--ok); }
+#logBody .l-skip  { color: var(--muted); }
+#logBody .l-goal  { color: var(--path); font-weight: 700; }
+#logBody .l-now   { background: #24334a; display: block; border-radius: 3px; }
+
+table.res { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.res th, table.res td {
+  border: 1px solid var(--line);
+  padding: 4px 7px;
+  text-align: center;
+}
+table.res th { background: var(--panel-2); color: var(--muted); font-weight: 600; }
+table.res td.l { text-align: left; }
+table.res tr:nth-child(even) td { background: #16202e; }
+table.res caption {
+  caption-side: top;
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  padding-bottom: 6px;
+}
+
+.queue-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.queue-view b {
+  background: #23405f;
+  border: 1px solid #35577c;
+  color: #cfe6ff;
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.queue-view b.first { background: var(--accent); color: #06182e; }
+.queue-view em { color: var(--muted); font-style: normal; font-size: 12px; }
+
+/* ------------------------- лабораторна робота №2 -------------------------- */
+
+#winCompare { right: 16px; top: 16px; width: 560px; display: none; z-index: 7; }
+#winResults .body { max-height: 47vh; }
+#winLog { top: auto; bottom: 64px; }
+#winLog .body { max-height: 25vh; }
+#winCompare .body, #winResearch .body { max-height: 78vh; }
+
+table.res td.best { color: var(--ok); font-weight: 700; }
+table.res td.worse { color: var(--warn); font-weight: 700; }
+table.res th.algo-bfs, table.res td.algo-bfs { border-top: 2px solid var(--path); }
+table.res th.algo-dfs, table.res td.algo-dfs { border-top: 2px solid #22d3ee; }
+
+.cmp-paths { margin-top: 10px; display: grid; gap: 6px; }
+.cmp-paths div {
+  padding: 6px 10px;
+  background: #0f1826;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.cmp-paths .p-bfs { border-left: 3px solid var(--path); }
+.cmp-paths .p-dfs { border-left: 3px solid #22d3ee; }
+.cmp-paths .p-short { border-left: 3px solid var(--ok); }
+.cmp-note { margin-top: 10px; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.cmp-note b { color: var(--text); }
+
+.queue-view b.first.stack { background: #c084fc; border-color: #c084fc; color: #1a0930; }
+#logBody .l-back  { color: #c084fc; }
+#logBody .l-prune { color: var(--warn); }
