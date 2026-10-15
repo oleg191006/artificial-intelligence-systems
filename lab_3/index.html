@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Хвильовий пошук у лабіринті — лабораторна робота №3</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>Одно-направлений хвильовий пошук на одиничному графі (лабіринті)</h1>
+    <span class="sub">Лабораторна робота №3 · Системи штучного інтелекту</span>
+    <span class="spacer"></span>
+    <span class="badge" id="mazeInfo">лабіринт: —</span>
+  </header>
+
+  <!-- ============================ керування ============================= -->
+  <aside>
+
+    <div class="group">
+      <h2>Лабіринт (одиничний граф)</h2>
+      <label class="field">
+        <span>Готовий лабіринт</span>
+        <select id="presetSel"></select>
+      </label>
+      <div class="row">
+        <label class="field small"><span>Рядків</span><input type="number" id="rowsInp" min="5" max="30" value="15"></label>
+        <label class="field small"><span>Стовпців</span><input type="number" id="colsInp" min="5" max="30" value="15"></label>
+      </div>
+      <div class="row">
+        <button id="btnResize" class="ghost">Змінити розмір</button>
+        <button id="btnClear" class="ghost">Прибрати стіни</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label class="field small"><span>Частка стін, %</span><input type="number" id="densInp" min="0" max="70" value="25"></label>
+        <label class="field small"><span>Зерно (seed)</span><input type="number" id="seedInp" min="1" max="99999" value="7"></label>
+      </div>
+      <div class="row">
+        <button id="btnFill" class="ghost">Заповнити стінами</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnExport" class="ghost">Зберегти JSON</button>
+        <button id="btnImport" class="ghost">Завантажити JSON</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnPng" class="ghost">Зберегти PNG</button>
+        <button id="btnMatrix" class="ghost">Матриця -1 / 0</button>
+      </div>
+      <input type="file" id="fileInput" accept="application/json" style="display:none">
+    </div>
+
+    <div class="group">
+      <h2>Редагування (мишею)</h2>
+      <div class="modes">
+        <button data-mode="wall" class="on">▪ Стіна (-1)</button>
+        <button data-mode="free">▫ Прохід (0)</button>
+        <button data-mode="start">🟢 Старт</button>
+        <button data-mode="goal">🔴 Ціль</button>
+      </div>
+      <div class="hint" id="modeHint">Ведіть мишею по клітинках, щоб ставити стіни.</div>
+    </div>
+
+    <div class="group">
+      <h2>Оператор переходу</h2>
+      <div class="ops">
+        <label><input type="radio" name="op" value="cross" checked> <b>✚</b> вверх-вниз-вправо-вліво</label>
+        <label><input type="radio" name="op" value="diag"> <b>✖</b> по діагоналях</label>
+        <label><input type="radio" name="op" value="combo"> <b>✳</b> комбінований (8 напрямів)</label>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="noCutChk">
+        заборонити діагональний прохід між двома стінами
+      </label>
+    </div>
+
+    <div class="group">
+      <h2>Виконання пошуку</h2>
+      <div class="row">
+        <button id="btnRun" class="primary">▶ Пуск (хвиля)</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnPause">⏸ Пауза</button>
+        <button id="btnStep">⏭ Крок</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnFast">⚡ Миттєво</button>
+        <button id="btnReset" class="ghost">✕ Скинути</button>
+      </div>
+      <label class="field" style="margin-top:8px">
+        <span>Затримка: <b id="delayVal">250</b> мс</span>
+        <input type="range" id="delay" min="0" max="1500" step="10" value="250">
+      </label>
+      <label class="field">
+        <span>Крок анімації</span>
+        <select id="granSel">
+          <option value="wave">одна хвиля (фронт)</option>
+          <option value="cell">одна клітинка</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="numChk" checked> показувати позначки в клітинках</label>
+    </div>
+
+    <div class="group">
+      <h2>Дослідження</h2>
+      <div class="row">
+        <button id="btnCompare" class="primary">⚖ Порівняти оператори</button>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <button id="btnResearch">📊 Серія експериментів</button>
+      </div>
+      <div class="hint">
+        «Порівняти» виконує хвильовий пошук усіма операторами на поточному
+        лабіринті й показує всі шляхи одночасно. «Серія експериментів» проганяє
+        досліди для різних лабіринтів, розмірів і частки стін.
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================== полотно ============================== -->
+  <main id="stage">
+    <canvas id="canvas"></canvas>
+
+    <div class="legend">
+      <span><i style="background:#0b1019;border:1px solid #3a4a63"></i>стіна (-1)</span>
+      <span><i style="background:#1d2a3d"></i>прохід (0)</span>
+      <span><i style="background:linear-gradient(90deg,#1e5aa8,#2dd4bf)"></i>хвиля (позначка k)</span>
+      <span><i style="background:#f472b6"></i>фронт хвилі</span>
+      <span><i style="background:#34d399"></i>старт</span>
+      <span><i style="background:#f87171"></i>ціль</span>
+      <span><i style="background:#ffb02e"></i>шлях</span>
+    </div>
+
+    <div class="window" id="winResults">
+      <div class="title">
+        <span>Результати пошуку</span>
+        <span class="spacer"></span>
+        <button data-collapse>—</button>
+      </div>
+      <div class="body">
+        <table class="kv" id="resTable"></table>
+        <div class="pathline" id="pathLine">Пошук не виконувався.</div>
+      </div>
+    </div>
+
+    <div class="window" id="winLog">
+      <div class="title">
+        <span>Протокол поширення хвилі</span>
+        <span class="spacer"></span>
+        <button data-collapse>—</button>
+      </div>
+      <div class="body"><div id="logBody"></div></div>
+    </div>
+
+    <div class="window" id="winMatrix">
+      <div class="title">
+        <span>Матриця лабіринту</span>
+        <span class="spacer"></span>
+        <button data-close>✕</button>
+      </div>
+      <div class="body"><pre id="matrixBody"></pre></div>
+    </div>
+
+    <div class="window" id="winCompare">
+      <div class="title">
+        <span>Порівняння операторів переходу</span>
+        <span class="spacer"></span>
+        <button data-close>✕</button>
+      </div>
+      <div class="body"><div id="compareBody"></div></div>
+    </div>
+
+    <div class="window" id="winResearch">
+      <div class="title">
+        <span>Серія експериментів</span>
+        <span class="spacer"></span>
+        <button id="btnCsv">CSV</button>
+        <button data-close>✕</button>
+      </div>
+      <div class="body"><div id="researchBody"></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/maze.js"></script>
+<script src="js/maze-data.js"></script>
+<script src="js/wave.js"></script>
+<script src="js/render.js"></script>
+<script src="js/research.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
